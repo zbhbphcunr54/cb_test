@@ -1,0 +1,17 @@
+exchange:
+  okx:
+    apiKey: "YOUR_API_KEY"
+    secret: "YOUR_SECRET_KEY"
+    password: "YOUR_PASSPHRASE"
+
+symbols:
+  top_n: 20
+  blacklist: ["USDC/USDT", "DAI/USDT"]
+
+notify:
+  webhooks:
+    short_term: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_1"
+    medium_long: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_2"
+    wave: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_3"
+    anomaly: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_4"
+    system: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY_5"

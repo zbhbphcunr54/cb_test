@@ -1,0 +1,11 @@
+ccxt>=4.2.0
+pandas
+pandas-ta
+numpy
+websockets
+apscheduler
+requests
+mplfinance
+matplotlib
+sqlalchemy
+PyYAML
