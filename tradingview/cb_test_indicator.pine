@@ -24,7 +24,7 @@ bbLen = input.int(20, "Bollinger Length", minval=1, group=groupShort)
 bbMult = input.float(2.0, "Bollinger StdDev", minval=0.1, step=0.1, group=groupShort)
 
 groupWave = "P4 Wave Hint"
-pivotLen = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
+waveLookbackLen = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
 wavePullbackBandPct = input.float(1.0, "Wave Pullback Band (%)", minval=0.1, step=0.1, group=groupWave)
 groupRisk = "Risk Reference"
 slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
@@ -64,8 +64,9 @@ p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
 avgVol = ta.sma(volume, volLookback)
 volSpike = volume > avgVol * volSpikeMul
 safeOpen = math.max(math.abs(open), 1e-10)
+safeClose = math.max(math.abs(close), 1e-10)
 priceChangePct = math.abs((close - open) / safeOpen) * 100
-rangePct = math.abs((high - low) / safeOpen) * 100
+rangePct = math.abs((high - low) / safeClose) * 100
 priceSpike = priceChangePct >= priceSpikePct
 rangeSpike = rangePct >= priceSpikePct * p2RangeSpikeMul
 p2Anomaly = volSpike and (priceSpike or rangeSpike)
@@ -82,11 +83,11 @@ p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis an
 p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-enoughBars = bar_index >= pivotLen * 2  // need two full windows: current window + previous window
-lastPH = ta.highest(high, pivotLen)
-prevPH = ta.highest(high[pivotLen], pivotLen)
-lastPL = ta.lowest(low, pivotLen)
-prevPL = ta.lowest(low[pivotLen], pivotLen)
+enoughBars = bar_index >= waveLookbackLen * 2  // need two full windows: current window + previous window
+lastPH = ta.highest(high, waveLookbackLen)
+prevPH = ta.highest(high[waveLookbackLen], waveLookbackLen)
+lastPL = ta.lowest(low, waveLookbackLen)
+prevPL = ta.lowest(low[waveLookbackLen], waveLookbackLen)
 // prevPH/prevPL are extremes from the previous non-overlapping window, used for structure comparison.
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
