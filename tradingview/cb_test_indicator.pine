@@ -85,11 +85,11 @@ p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
 // prevPH/prevPL use the shifted window [waveLookback .. waveLookback*2-1] bars ago for structure comparison.
-enoughBars = bar_index >= waveLookback * 2 - 1  // ensures both current lookback window and shifted previous window have enough bars
+enoughBars = bar_index >= waveLookback * 2 - 1  // need 2*waveLookback bars of history (minus 1 for zero-based bar_index)
 lastPH = ta.highest(high, waveLookback)
-prevPH = ta.highest(high[waveLookback], waveLookback)
+prevPH = ta.highest(high, waveLookback)[waveLookback]
 lastPL = ta.lowest(low, waveLookback)
-prevPL = ta.lowest(low[waveLookback], waveLookback)
+prevPL = ta.lowest(low, waveLookback)[waveLookback]
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
