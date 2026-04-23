@@ -80,9 +80,11 @@ prevPL = ta.valuewhen(not na(pl), pl, 1)
 
 waveBullStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
-wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL and close <= lastPL * (1 + waveBand)
+nearLastPL = math.abs(close - lastPL) / lastPL <= waveBand
+wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL and nearLastPL
 waveBearStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH < prevPH and lastPL < prevPL
-wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH and close >= lastPH * (1 - waveBand)
+nearLastPH = math.abs(close - lastPH) / lastPH <= waveBand
+wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH and nearLastPH
 
 // ===== Plotting =====
 plot(emaFast, "EMA Fast", color=color.new(color.teal, 0), linewidth=2)
