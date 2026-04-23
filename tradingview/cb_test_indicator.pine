@@ -24,6 +24,7 @@ bbMult = input.float(2.0, "Bollinger StdDev", minval=0.1, step=0.1, group=groupS
 
 groupWave = "P4 Wave Hint"
 pivotLen = input.int(10, "Pivot Width", minval=2, group=groupWave)
+wavePullbackBandPct = input.float(1.0, "Wave Pullback Band (%)", minval=0.1, step=0.1, group=groupWave)
 groupRisk = "Risk Reference"
 slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
 tpAtrMult = input.float(3.0, "TP ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
@@ -48,8 +49,8 @@ pbBand = pullbackPct * 0.01
 nearEmaFast = close <= emaFast * (1 + pbBand) and close >= emaFast * (1 - pbBand)
 trendLong = adx > adxTrendTh and emaFast > emaSlow
 trendShort = adx > adxTrendTh and emaFast < emaSlow
-macdHistUp = macdHist > nz(macdHist[1])
-macdHistDown = macdHist < nz(macdHist[1])
+macdHistUp = ta.change(macdHist) > 0
+macdHistDown = ta.change(macdHist) < 0
 
 p1Long = trendLong and nearEmaFast and rsi < 70 and macdHistUp
 p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
@@ -78,9 +79,10 @@ lastPL = ta.valuewhen(not na(pl), pl, 0)
 prevPL = ta.valuewhen(not na(pl), pl, 1)
 
 waveBullStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH > prevPH and lastPL > prevPL
-wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL
+waveBand = wavePullbackBandPct * 0.01
+wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL and close <= lastPL * (1 + waveBand)
 waveBearStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH < prevPH and lastPL < prevPL
-wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH
+wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH and close >= lastPH * (1 - waveBand)
 
 // ===== Plotting =====
 plot(emaFast, "EMA Fast", color=color.new(color.teal, 0), linewidth=2)
