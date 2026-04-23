@@ -7,6 +7,7 @@
 2. 复制 `cb_test_indicator.pine` 全部内容并粘贴  
 3. 点击 **Add to chart**  
 4. 在指标参数中按你的品种和周期调整阈值  
+5. 回归验证建议先开启 `Only trigger on bar close`（默认开启）
 
 ## 对应关系（与原 Python 引擎）
 - **P1 中长线**：EMA20/EMA50 + ADX + RSI + MACD 柱变化 + 回踩带
@@ -17,4 +18,9 @@
 ## 说明
 - 这是图表端信号指标，不依赖服务器、定时任务、数据库或 Webhook。
 - 支持 `alertcondition`，可在 TradingView 内部直接创建提醒。
+- 指标增加了“仅收线触发”开关，减少未收线波动带来的信号抖动。
 - 原 Python 代码保留，便于后续继续扩展回测或自动化版本。
+
+## 当前验证限制
+- 当前执行环境访问 `https://www.tradingview.com/` 被拦截（`ERR_BLOCKED_BY_CLIENT`），无法在此环境直接登录你的账号做网页侧自动回归。
+- 已完成代码侧稳定性改进；你可在账号内按同一参数进行人工回归（BTC/ETH 的 5m、15m、1h 三个周期）。
