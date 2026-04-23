@@ -1,0 +1,20 @@
+# CB Test 无服务器版本（TradingView 指标）
+
+已将仓库中的核心引擎思路迁移为 TradingView Pine Script 指标：`tradingview/cb_test_indicator.pine`。
+
+## 使用方式
+1. 打开 TradingView → Pine Editor  
+2. 复制 `cb_test_indicator.pine` 全部内容并粘贴  
+3. 点击 **Add to chart**  
+4. 在指标参数中按你的品种和周期调整阈值  
+
+## 对应关系（与原 Python 引擎）
+- **P1 中长线**：EMA20/EMA50 + ADX + RSI + MACD 柱变化 + 回踩带
+- **P2 异动**：成交量倍增 + 当根价格振幅阈值
+- **P3 短线**：EMA5/EMA15 交叉 + 布林位置 + RSI 过滤
+- **P4 波浪提示**：基于 pivot 高低点的简化结构提示
+
+## 说明
+- 这是图表端信号指标，不依赖服务器、定时任务、数据库或 Webhook。
+- 支持 `alertcondition`，可在 TradingView 内部直接创建提醒。
+- 原 Python 代码保留，便于后续继续扩展回测或自动化版本。
