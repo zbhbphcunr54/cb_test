@@ -27,7 +27,7 @@ p3RsiLongMax = input.float(70.0, "P3 RSI Long Max", minval=1.0, maxval=99.0, ste
 p3RsiShortMin = input.float(30.0, "P3 RSI Short Min", minval=1.0, maxval=99.0, step=1.0, group=groupShort)
 
 groupWave = "P4 Wave Hint"
-waveLookback = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
+pivotLen = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
 wavePullbackBandPct = input.float(1.0, "Wave Pullback Band (%)", minval=0.1, step=0.1, group=groupWave)
 groupRisk = "Risk Reference"
 slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
@@ -84,12 +84,12 @@ p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis an
 p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-// prevPH/prevPL use the shifted window [waveLookback .. waveLookback*2-1] bars ago for structure comparison.
-enoughBars = bar_index >= waveLookback * 2 - 1  // need 2*waveLookback bars of history to evaluate current and shifted windows
-lastPH = ta.highest(high, waveLookback)
-prevPH = ta.highest(high, waveLookback)[waveLookback]
-lastPL = ta.lowest(low, waveLookback)
-prevPL = ta.lowest(low, waveLookback)[waveLookback]
+// prevPH/prevPL use the shifted window [pivotLen .. pivotLen*2-1] bars ago for structure comparison.
+enoughBars = bar_index >= pivotLen * 2 - 1  // need at least 2*pivotLen bars (indices 0..2*pivotLen-1) to evaluate both windows
+lastPH = ta.highest(high, pivotLen)
+prevPH = ta.highest(high, pivotLen)[pivotLen]  // shifted window high over bars [pivotLen .. 2*pivotLen-1] ago
+lastPL = ta.lowest(low, pivotLen)
+prevPL = ta.lowest(low, pivotLen)[pivotLen]  // shifted window low over bars [pivotLen .. 2*pivotLen-1] ago
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
