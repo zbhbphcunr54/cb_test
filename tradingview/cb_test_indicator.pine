@@ -58,7 +58,7 @@ p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
 // ===== P2: Anomaly Detection =====
 avgVol = ta.sma(volume, volLookback)
 volSpike = volume > avgVol * volSpikeMul
-priceChangePct = math.abs((close - open) / open) * 100
+priceChangePct = open != 0 ? math.abs((close - open) / open) * 100 : 0.0
 priceSpike = priceChangePct >= priceSpikePct
 p2Anomaly = volSpike and priceSpike
 p2Up = p2Anomaly and close > open
@@ -101,8 +101,8 @@ plotshape(p2Down, title="P2 Anomaly Down", style=shape.circle, location=location
 plotshape(p3Long, title="P3 Long", style=shape.labelup, location=location.belowbar, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny, text="P3 L")
 plotshape(p3Short, title="P3 Short", style=shape.labeldown, location=location.abovebar, color=color.new(color.maroon, 0), textcolor=color.white, size=size.tiny, text="P3 S")
 
-plotshape(wavePullbackLong, title="P4 Wave Pullback", style=shape.diamond, location=location.belowbar, color=color.new(color.yellow, 0), size=size.tiny, text="P4")
-plotshape(wavePullbackShort, title="P4 Wave Pullback Short", style=shape.diamond, location=location.abovebar, color=color.new(color.orange, 0), size=size.tiny, text="P4")
+plotshape(wavePullbackLong, title="P4 Wave Pullback", style=shape.diamond, location=location.belowbar, color=color.new(color.yellow, 0), size=size.tiny, text="P4 L")
+plotshape(wavePullbackShort, title="P4 Wave Pullback Short", style=shape.diamond, location=location.abovebar, color=color.new(color.orange, 0), size=size.tiny, text="P4 S")
 
 // ===== Optional risk reference (visual only) =====
 longSL = p1Long ? close - atr * slAtrMult : na
