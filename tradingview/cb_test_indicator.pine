@@ -22,6 +22,9 @@ emaShortFast = input.int(5, "EMA Short Fast", minval=1, group=groupShort)
 emaShortSlow = input.int(15, "EMA Short Slow", minval=1, group=groupShort)
 bbLen = input.int(20, "Bollinger Length", minval=1, group=groupShort)
 bbMult = input.float(2.0, "Bollinger StdDev", minval=0.1, step=0.1, group=groupShort)
+p3BandInsetPct = input.float(1.0, "P3 Band Inset (%)", minval=0.1, step=0.1, group=groupShort)
+p3RsiLongMax = input.float(70.0, "P3 RSI Long Max", minval=1.0, maxval=99.0, step=1.0, group=groupShort)
+p3RsiShortMin = input.float(30.0, "P3 RSI Short Min", minval=1.0, maxval=99.0, step=1.0, group=groupShort)
 
 groupWave = "P4 Wave Hint"
 waveLookbackLen = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
@@ -76,14 +79,12 @@ p2Down = p2Anomaly and close < open
 // ===== P3: Short-Term Resonance =====
 emaCrossUp = ta.crossover(ema5, ema15)
 emaCrossDown = ta.crossunder(ema5, ema15)
-p3BandInset = 0.01  // require price to stay 1% inside Bollinger edges to reduce extreme-chase entries
-p3RsiLongMax = 70.0
-p3RsiShortMin = 30.0
+p3BandInset = p3BandInsetPct * 0.01
 p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis and rsi < p3RsiLongMax
 p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-enoughBars = bar_index >= waveLookbackLen * 2 - 1  // minimum bars needed for current window and shifted previous window
+enoughBars = bar_index >= waveLookbackLen * 2 - 1  // valid with waveLookbackLen>=3; ensures current + shifted previous window exist
 lastPH = ta.highest(high, waveLookbackLen)
 prevPH = ta.highest(high[waveLookbackLen], waveLookbackLen)
 lastPL = ta.lowest(low, waveLookbackLen)
