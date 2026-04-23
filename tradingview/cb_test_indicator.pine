@@ -15,6 +15,7 @@ groupAnomaly = "P2 Anomaly"
 volLookback = input.int(20, "Volume SMA Length", minval=1, group=groupAnomaly)
 volSpikeMul = input.float(3.0, "Volume Spike Multiple", minval=1.0, step=0.1, group=groupAnomaly)
 priceSpikePct = input.float(1.5, "Price Spike (%)", minval=0.1, step=0.1, group=groupAnomaly)
+p2RangeSpikeMul = input.float(1.5, "Range Spike Multiplier", minval=1.0, step=0.1, group=groupAnomaly)
 
 groupShort = "P3 Short-Term Resonance"
 emaShortFast = input.int(5, "EMA Short Fast", minval=1, group=groupShort)
@@ -66,7 +67,7 @@ safeOpen = math.max(math.abs(open), 1e-10)
 priceChangePct = math.abs((close - open) / safeOpen) * 100
 rangePct = math.abs((high - low) / safeOpen) * 100
 priceSpike = priceChangePct >= priceSpikePct
-rangeSpike = rangePct >= priceSpikePct * 1.5
+rangeSpike = rangePct >= priceSpikePct * p2RangeSpikeMul
 p2Anomaly = volSpike and (priceSpike or rangeSpike)
 p2Up = p2Anomaly and close > open
 p2Down = p2Anomaly and close < open
@@ -74,15 +75,19 @@ p2Down = p2Anomaly and close < open
 // ===== P3: Short-Term Resonance =====
 emaCrossUp = ta.crossover(ema5, ema15)
 emaCrossDown = ta.crossunder(ema5, ema15)
-p3Long = emaCrossUp and close < bbUpper * 0.99 and close > basis and rsi < 70
-p3Short = emaCrossDown and close > bbLower * 1.01 and close < basis and rsi > 30
+p3BandInset = 0.01  // require price to stay 1% inside Bollinger edges to reduce extreme-chase entries
+p3RsiLongMax = 70.0
+p3RsiShortMin = 30.0
+p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis and rsi < p3RsiLongMax
+p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-enoughBars = bar_index >= pivotLen * 2
+enoughBars = bar_index >= pivotLen * 2  // need two full windows: current window + previous window
 lastPH = ta.highest(high, pivotLen)
 prevPH = ta.highest(high[pivotLen], pivotLen)
 lastPL = ta.lowest(low, pivotLen)
 prevPL = ta.lowest(low[pivotLen], pivotLen)
+// prevPH/prevPL are extremes from the previous non-overlapping window, used for structure comparison.
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
