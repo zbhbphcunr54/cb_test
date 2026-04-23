@@ -1,0 +1,142 @@
+//@version=5
+indicator("CB Test Multi-Engine Indicator (Serverless)", overlay=true, max_labels_count=500)
+
+// ===== Inputs =====
+groupTrend = "P1 Trend / Pullback"
+emaFastLen = input.int(20, "EMA Fast", minval=1, group=groupTrend)
+emaSlowLen = input.int(50, "EMA Slow", minval=1, group=groupTrend)
+rsiLen = input.int(14, "RSI Length", minval=1, group=groupTrend)
+adxLen = input.int(14, "ADX Length", minval=1, group=groupTrend)
+atrLen = input.int(14, "ATR Length", minval=1, group=groupTrend)
+adxTrendTh = input.float(25.0, "ADX Trend Threshold", minval=1, group=groupTrend)
+pullbackPct = input.float(1.0, "Pullback Band (%) around EMA Fast", minval=0.1, step=0.1, group=groupTrend)
+
+groupAnomaly = "P2 Anomaly"
+volLookback = input.int(20, "Volume SMA Length", minval=1, group=groupAnomaly)
+volSpikeMul = input.float(3.0, "Volume Spike Multiple", minval=1.0, step=0.1, group=groupAnomaly)
+priceSpikePct = input.float(1.5, "Price Spike (%)", minval=0.1, step=0.1, group=groupAnomaly)
+
+groupShort = "P3 Short-Term Resonance"
+emaShortFast = input.int(5, "EMA Short Fast", minval=1, group=groupShort)
+emaShortSlow = input.int(15, "EMA Short Slow", minval=1, group=groupShort)
+bbLen = input.int(20, "Bollinger Length", minval=1, group=groupShort)
+bbMult = input.float(2.0, "Bollinger StdDev", minval=0.1, step=0.1, group=groupShort)
+
+groupWave = "P4 Wave Hint"
+pivotLen = input.int(10, "Pivot Width", minval=2, group=groupWave)
+wavePullbackBandPct = input.float(1.0, "Wave Pullback Band (%)", minval=0.1, step=0.1, group=groupWave)
+groupRisk = "Risk Reference"
+slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
+tpAtrMult = input.float(3.0, "TP ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
+groupExec = "Execution / Regression"
+confirmOnClose = input.bool(true, "Only trigger on bar close", group=groupExec)
+
+// ===== Core Indicators =====
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+rsi = ta.rsi(close, rsiLen)
+adx = ta.adx(adxLen)
+atr = ta.atr(atrLen)
+[_, _, macdHist] = ta.macd(close, 12, 26, 9)
+
+ema5 = ta.ema(close, emaShortFast)
+ema15 = ta.ema(close, emaShortSlow)
+basis = ta.sma(close, bbLen)
+dev = ta.stdev(close, bbLen) * bbMult
+bbUpper = basis + dev
+bbLower = basis - dev
+
+// ===== P1: Medium/Long Pullback Signal =====
+pbBand = pullbackPct * 0.01
+nearEmaFast = close <= emaFast * (1 + pbBand) and close >= emaFast * (1 - pbBand)
+trendLong = adx > adxTrendTh and emaFast > emaSlow
+trendShort = adx > adxTrendTh and emaFast < emaSlow
+macdHistUp = ta.change(macdHist) > 0
+macdHistDown = ta.change(macdHist) < 0
+
+p1Long = trendLong and nearEmaFast and rsi < 70 and macdHistUp
+p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
+
+// ===== P2: Anomaly Detection =====
+avgVol = ta.sma(volume, volLookback)
+volSpike = volume > avgVol * volSpikeMul
+safeOpen = math.max(math.abs(open), 1e-10)
+priceChangePct = math.abs((close - open) / safeOpen) * 100
+priceSpike = priceChangePct >= priceSpikePct
+p2Anomaly = volSpike and priceSpike
+p2Up = p2Anomaly and close > open
+p2Down = p2Anomaly and close < open
+
+// ===== P3: Short-Term Resonance =====
+emaCrossUp = ta.crossover(ema5, ema15)
+emaCrossDown = ta.crossunder(ema5, ema15)
+p3Long = emaCrossUp and close < bbUpper * 0.99 and rsi < 75
+p3Short = emaCrossDown and close > bbLower * 1.01 and rsi > 25
+
+// ===== P4: Simplified Wave Hint =====
+ph = ta.pivothigh(high, pivotLen, pivotLen)
+pl = ta.pivotlow(low, pivotLen, pivotLen)
+lastPH = ta.valuewhen(not na(ph), ph, 0)
+prevPH = ta.valuewhen(not na(ph), ph, 1)
+lastPL = ta.valuewhen(not na(pl), pl, 0)
+prevPL = ta.valuewhen(not na(pl), pl, 1)
+
+validPivots = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL)
+waveBullStructure = validPivots and lastPH > prevPH and lastPL > prevPL
+waveBand = wavePullbackBandPct * 0.01
+safeLastPL = math.max(math.abs(lastPL), 1e-10)
+nearLastPL = math.abs(close - lastPL) / safeLastPL <= waveBand
+wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL and nearLastPL
+waveBearStructure = validPivots and lastPH < prevPH and lastPL < prevPL
+safeLastPH = math.max(math.abs(lastPH), 1e-10)
+nearLastPH = math.abs(close - lastPH) / safeLastPH <= waveBand
+wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH and nearLastPH
+
+// ===== Signal confirmation gate =====
+confirmed = not confirmOnClose or barstate.isconfirmed
+p1LongSig = p1Long and confirmed
+p1ShortSig = p1Short and confirmed
+p2AnomalySig = p2Anomaly and confirmed
+p2UpSig = p2Up and confirmed
+p2DownSig = p2Down and confirmed
+p3LongSig = p3Long and confirmed
+p3ShortSig = p3Short and confirmed
+wavePullbackLongSig = wavePullbackLong and confirmed
+wavePullbackShortSig = wavePullbackShort and confirmed
+
+// ===== Plotting =====
+plot(emaFast, "EMA Fast", color=color.new(color.teal, 0), linewidth=2)
+plot(emaSlow, "EMA Slow", color=color.new(color.orange, 0), linewidth=2)
+plot(bbUpper, "BB Upper", color=color.new(color.blue, 75))
+plot(bbLower, "BB Lower", color=color.new(color.blue, 75))
+
+plotshape(p1LongSig, title="P1 Long", style=shape.triangleup, location=location.belowbar, color=color.lime, size=size.tiny, text="P1 L")
+plotshape(p1ShortSig, title="P1 Short", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.tiny, text="P1 S")
+
+plotshape(p2UpSig, title="P2 Anomaly Up", style=shape.circle, location=location.belowbar, color=color.new(color.fuchsia, 0), size=size.tiny, text="P2+")
+plotshape(p2DownSig, title="P2 Anomaly Down", style=shape.circle, location=location.abovebar, color=color.new(color.purple, 0), size=size.tiny, text="P2-")
+
+plotshape(p3LongSig, title="P3 Long", style=shape.labelup, location=location.belowbar, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny, text="P3 L")
+plotshape(p3ShortSig, title="P3 Short", style=shape.labeldown, location=location.abovebar, color=color.new(color.maroon, 0), textcolor=color.white, size=size.tiny, text="P3 S")
+
+plotshape(wavePullbackLongSig, title="P4 Wave Pullback", style=shape.diamond, location=location.belowbar, color=color.new(color.yellow, 0), size=size.tiny, text="P4 L")
+plotshape(wavePullbackShortSig, title="P4 Wave Pullback Short", style=shape.diamond, location=location.abovebar, color=color.new(color.orange, 0), size=size.tiny, text="P4 S")
+
+// ===== Optional risk reference (visual only) =====
+longSL = p1LongSig ? close - atr * slAtrMult : na
+longTP = p1LongSig ? close + atr * tpAtrMult : na
+shortSL = p1ShortSig ? close + atr * slAtrMult : na
+shortTP = p1ShortSig ? close - atr * tpAtrMult : na
+plot(longSL, "P1 Long SL", color=color.new(color.red, 70), style=plot.style_linebr)
+plot(longTP, "P1 Long TP", color=color.new(color.green, 70), style=plot.style_linebr)
+plot(shortSL, "P1 Short SL", color=color.new(color.red, 70), style=plot.style_linebr)
+plot(shortTP, "P1 Short TP", color=color.new(color.green, 70), style=plot.style_linebr)
+
+// ===== Alerts =====
+alertcondition(p1LongSig, "P1 Long", "P1 Long signal")
+alertcondition(p1ShortSig, "P1 Short", "P1 Short signal")
+alertcondition(p2AnomalySig, "P2 Anomaly", "P2 anomaly detected")
+alertcondition(p3LongSig, "P3 Long", "P3 long signal")
+alertcondition(p3ShortSig, "P3 Short", "P3 short signal")
+alertcondition(wavePullbackLongSig, "P4 Wave Pullback", "P4 wave pullback long setup")
+alertcondition(wavePullbackShortSig, "P4 Wave Pullback Short", "P4 wave pullback short setup")
