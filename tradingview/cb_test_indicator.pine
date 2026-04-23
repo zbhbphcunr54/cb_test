@@ -27,7 +27,7 @@ p3RsiLongMax = input.float(70.0, "P3 RSI Long Max", minval=1.0, maxval=99.0, ste
 p3RsiShortMin = input.float(30.0, "P3 RSI Short Min", minval=1.0, maxval=99.0, step=1.0, group=groupShort)
 
 groupWave = "P4 Wave Hint"
-waveLookbackLen = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
+waveLookback = input.int(10, "Wave Structure Lookback", minval=3, group=groupWave)
 wavePullbackBandPct = input.float(1.0, "Wave Pullback Band (%)", minval=0.1, step=0.1, group=groupWave)
 groupRisk = "Risk Reference"
 slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
@@ -84,12 +84,12 @@ p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis an
 p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-enoughBars = bar_index >= waveLookbackLen * 2 - 1  // ensures both current lookback window and shifted previous window have enough bars
-lastPH = ta.highest(high, waveLookbackLen)
-prevPH = ta.highest(high[waveLookbackLen], waveLookbackLen)
-lastPL = ta.lowest(low, waveLookbackLen)
-prevPL = ta.lowest(low[waveLookbackLen], waveLookbackLen)
-// prevPH/prevPL are extremes from the previous shifted lookback window, used for structure comparison.
+// prevPH/prevPL use the shifted window [waveLookback .. waveLookback*2-1] bars ago for structure comparison.
+enoughBars = bar_index >= waveLookback * 2 - 1  // ensures both current lookback window and shifted previous window have enough bars
+lastPH = ta.highest(high, waveLookback)
+prevPH = ta.highest(high[waveLookback], waveLookback)
+lastPL = ta.lowest(low, waveLookback)
+prevPL = ta.lowest(low[waveLookback], waveLookback)
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
