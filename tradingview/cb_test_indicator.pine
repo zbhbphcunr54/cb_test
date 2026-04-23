@@ -58,7 +58,7 @@ p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
 // ===== P2: Anomaly Detection =====
 avgVol = ta.sma(volume, volLookback)
 volSpike = volume > avgVol * volSpikeMul
-safeOpen = math.max(open, 1e-10)
+safeOpen = math.max(math.abs(open), 1e-10)
 priceChangePct = math.abs((close - open) / safeOpen) * 100
 priceSpike = priceChangePct >= priceSpikePct
 p2Anomaly = volSpike and priceSpike
