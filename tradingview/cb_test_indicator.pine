@@ -24,6 +24,9 @@ bbMult = input.float(2.0, "Bollinger StdDev", minval=0.1, step=0.1, group=groupS
 
 groupWave = "P4 Wave Hint"
 pivotLen = input.int(10, "Pivot Width", minval=2, group=groupWave)
+groupRisk = "Risk Reference"
+slAtrMult = input.float(1.5, "SL ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
+tpAtrMult = input.float(3.0, "TP ATR Multiplier", minval=0.1, step=0.1, group=groupRisk)
 
 // ===== Core Indicators =====
 emaFast = ta.ema(close, emaFastLen)
@@ -75,7 +78,9 @@ lastPL = ta.valuewhen(not na(pl), pl, 0)
 prevPL = ta.valuewhen(not na(pl), pl, 1)
 
 waveBullStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH > prevPH and lastPL > prevPL
-wavePullbackLong = waveBullStructure and close < lastPH and close > prevPH
+wavePullbackLong = waveBullStructure and close < lastPH and close > lastPL
+waveBearStructure = not na(lastPH) and not na(prevPH) and not na(lastPL) and not na(prevPL) and lastPH < prevPH and lastPL < prevPL
+wavePullbackShort = waveBearStructure and close > lastPL and close < lastPH
 
 // ===== Plotting =====
 plot(emaFast, "EMA Fast", color=color.new(color.teal, 0), linewidth=2)
@@ -93,12 +98,13 @@ plotshape(p3Long, title="P3 Long", style=shape.labelup, location=location.belowb
 plotshape(p3Short, title="P3 Short", style=shape.labeldown, location=location.abovebar, color=color.new(color.maroon, 0), textcolor=color.white, size=size.tiny, text="P3 S")
 
 plotshape(wavePullbackLong, title="P4 Wave Pullback", style=shape.diamond, location=location.belowbar, color=color.new(color.yellow, 0), size=size.tiny, text="P4")
+plotshape(wavePullbackShort, title="P4 Wave Pullback Short", style=shape.diamond, location=location.abovebar, color=color.new(color.orange, 0), size=size.tiny, text="P4")
 
 // ===== Optional risk reference (visual only) =====
-longSL = p1Long ? close - atr * 1.5 : na
-longTP = p1Long ? close + atr * 3.0 : na
-shortSL = p1Short ? close + atr * 1.5 : na
-shortTP = p1Short ? close - atr * 3.0 : na
+longSL = p1Long ? close - atr * slAtrMult : na
+longTP = p1Long ? close + atr * tpAtrMult : na
+shortSL = p1Short ? close + atr * slAtrMult : na
+shortTP = p1Short ? close - atr * tpAtrMult : na
 plot(longSL, "P1 Long SL", color=color.new(color.red, 70), style=plot.style_linebr)
 plot(longTP, "P1 Long TP", color=color.new(color.green, 70), style=plot.style_linebr)
 plot(shortSL, "P1 Short SL", color=color.new(color.red, 70), style=plot.style_linebr)
@@ -111,3 +117,4 @@ alertcondition(p2Anomaly, "P2 Anomaly", "P2 anomaly detected")
 alertcondition(p3Long, "P3 Long", "P3 long signal")
 alertcondition(p3Short, "P3 Short", "P3 short signal")
 alertcondition(wavePullbackLong, "P4 Wave Pullback", "P4 wave pullback long setup")
+alertcondition(wavePullbackShort, "P4 Wave Pullback Short", "P4 wave pullback short setup")
