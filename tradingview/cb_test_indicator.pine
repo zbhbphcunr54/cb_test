@@ -64,9 +64,9 @@ p1Short = trendShort and nearEmaFast and rsi > 30 and macdHistDown
 avgVol = ta.sma(volume, volLookback)
 volSpike = volume > avgVol * volSpikeMul
 safeOpen = math.max(math.abs(open), 1e-10)
-safeClose = math.max(math.abs(close), 1e-10)
+safeTypicalPrice = math.max(math.abs(hl2), 1e-10)
 priceChangePct = math.abs((close - open) / safeOpen) * 100
-rangePct = math.abs((high - low) / safeClose) * 100
+rangePct = math.abs((high - low) / safeTypicalPrice) * 100
 priceSpike = priceChangePct >= priceSpikePct
 rangeSpike = rangePct >= priceSpikePct * p2RangeSpikeMul
 p2Anomaly = volSpike and (priceSpike or rangeSpike)
@@ -83,12 +83,12 @@ p3Long = emaCrossUp and close < bbUpper * (1 - p3BandInset) and close > basis an
 p3Short = emaCrossDown and close > bbLower * (1 + p3BandInset) and close < basis and rsi > p3RsiShortMin
 
 // ===== P4: Non-lookahead Wave Hint (replaces lagging pivots) =====
-enoughBars = bar_index >= waveLookbackLen * 2  // need two full windows: current window + previous window
+enoughBars = bar_index >= waveLookbackLen * 2 - 1  // minimum bars needed for current window and shifted previous window
 lastPH = ta.highest(high, waveLookbackLen)
 prevPH = ta.highest(high[waveLookbackLen], waveLookbackLen)
 lastPL = ta.lowest(low, waveLookbackLen)
 prevPL = ta.lowest(low[waveLookbackLen], waveLookbackLen)
-// prevPH/prevPL are extremes from the previous non-overlapping window, used for structure comparison.
+// prevPH/prevPL are extremes from the previous shifted lookback window, used for structure comparison.
 
 waveBullStructure = enoughBars and lastPH > prevPH and lastPL > prevPL
 waveBand = wavePullbackBandPct * 0.01
